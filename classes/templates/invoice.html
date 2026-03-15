@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice</title>
+    <link type="text/css" rel="stylesheet" href="/css/materialize.min.css" media="screen,projection"/>
+    <link type="text/css" rel="stylesheet" href="/css/style.css"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+<body>
+<div class="container">
+    <h4>Invoice</h4>
+    <p><strong>Invoice ID:</strong> <span id="inv_id" th:text="${transaction.transactionId}"></span></p>
+    <p><strong>Merchant:</strong> <span id="inv_merchant" th:text="${transaction.merchantName}"></span></p>
+
+    <h5>Items</h5>
+    <table class="highlight responsive-table">
+        <thead>
+        <tr>
+            <th>Item</th>
+            <th>Price (INR)</th>
+            <th>Quantity</th>
+            <th>Line Total</th>
+        </tr>
+        </thead>
+        <tbody id="inv_items_body">
+        <tr th:each="item : ${transaction.items}">
+            <td th:text="${item.name}">Item</td>
+            <td th:text="${item.price}">0</td>
+            <td th:text="${item.quantity}">0</td>
+            <td th:text="${item.price * item.quantity}">0</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <h5 style="margin-top:20px;">
+        Total: ₹ <span id="inv_total" th:text="${transaction.amount}"></span>
+    </h5>
+
+    <div style="margin-top:30px;" class="center">
+        <h5>Scan QR to Pay</h5>
+        <img th:src="@{'/qr/' + ${transaction.transactionId}}" alt="Invoice QR Code"/>
+        <div style="margin-top:15px;">
+            <a class="waves-effect waves-light btn" th:href="@{'/invoice-image/' + ${transaction.transactionId}}">Download Bill Image</a>
+        </div>
+    </div>
+
+    <div style="margin-top:30px;">
+        <h5>Payment Status</h5>
+        <div id="paymentStatus">Waiting for payment...</div>
+    </div>
+
+    <div style="margin-top:30px;">
+        <h5>Send Bill (without QR)</h5>
+        <div class="row">
+            <div class="col s12 m6">
+                <div class="input-field col s12 input-field-border">
+                    <input id="wa_mobile" type="text" placeholder="Customer Mobile Number (optional)">
+                </div>
+            </div>
+            <div class="col s12 m6">
+                <a class="waves-effect waves-light btn" onclick="sendWhatsApp()">Send Bill</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<audio id="successSound" src="/success.mp3"></audio>
+
+<script type="text/javascript">
+    function sendWhatsApp() {
+        var mobile = document.getElementById("wa_mobile").value || "";
+        if (!mobile) {
+            alert("Please enter customer mobile number.");
+            return;
+        }
+
+        var id = document.getElementById("inv_id").innerText;
+        var merchant = document.getElementById("inv_merchant").innerText;
+        var total = document.getElementById("inv_total").innerText;
+
+        var rows = document.querySelectorAll("#inv_items_body tr");
+        var itemLines = [];
+        rows.forEach(function (row) {
+            var cells = row.getElementsByTagName("td");
+            if (cells.length < 4) return;
+            var name = cells[0].innerText;
+            var price = cells[1].innerText;
+            var qty = cells[2].innerText;
+            var lineTotal = cells[3].innerText;
+            itemLines.push(name + " x" + qty + " \u20B9" + lineTotal);
+        });
+
+        var text =
+            "Invoice ID: " + id + "\n" +
+            "Merchant: " + merchant + "\n" +
+            "Items:\n" + itemLines.join("\n") + "\n" +
+            "Total: \u20B9" + total;
+
+        var base = "https://wa.me/";
+        var url = base + encodeURIComponent(mobile) + "?text=" + encodeURIComponent(text);
+        window.open(url, "_blank");
+    }
+</script>
+
+<script type="text/javascript" th:inline="javascript">
+    // Auto refresh payment status every 3 seconds
+    const transactionId = [[${transaction.transactionId}]];
+
+    setInterval(function () {
+        fetch("/payment-status/" + transactionId)
+            .then(res => res.text())
+            .then(status => {
+                if (!status) return;
+
+                if (status === "COMPLETED") {
+                    document.getElementById("paymentStatus").innerText = "Payment Received ✅";
+                    var audio = document.getElementById("successSound");
+                    if (audio) {
+                        audio.play().catch(function () {
+                            // ignore autoplay issues
+                        });
+                    }
+                } else if (status === "EXPIRED") {
+                    document.getElementById("paymentStatus").innerText = "QR Expired";
+                } else if (status === "PENDING") {
+                    document.getElementById("paymentStatus").innerText = "Waiting for payment...";
+                }
+            });
+    }, 3000);
+</script>
+
+</body>
+</html>
+
+

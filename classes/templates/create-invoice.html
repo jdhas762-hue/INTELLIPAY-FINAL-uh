@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Invoice</title>
+    <link type="text/css" rel="stylesheet" href="/css/materialize.min.css" media="screen,projection"/>
+    <link type="text/css" rel="stylesheet" href="/css/style.css"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+<body>
+<div class="container">
+    <h4>Create Invoice</h4>
+    <div class="row">
+        <div class="col s12">
+            <table class="highlight responsive-table">
+                <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Price (INR)</th>
+                    <th>Quantity</th>
+                </tr>
+                </thead>
+                <tbody id="invoice_items_table">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row" style="margin-top:20px;">
+        <div class="col s12 m6">
+            <div class="input-field col s12 input-field-border">
+                <input id="invoice_total" type="text" readonly placeholder="Total Amount">
+            </div>
+        </div>
+        <div class="col s12 m6">
+            <a class="waves-effect waves-light btn" onclick="generateInvoice()">Generate Invoice</a>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="/js/materialize.min.js"></script>
+<script type="text/javascript" src="/js/invoice.js"></script>
+</body>
+</html>
+
+
