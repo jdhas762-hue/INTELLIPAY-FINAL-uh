@@ -5,7 +5,7 @@ COPY pom.xml /home/app
 RUN mvn -f /home/app/pom.xml clean package
 
 # Stage 2 - Run
-FROM eclipse-temurin:8-jdk
+FROM  openjdk:8
 COPY --from=build /home/app/target/qr_payment_project_api.jar /usr/local/lib/qr_payment_project_api.jar
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","/usr/local/lib/qr_payment_project_api.jar"]
